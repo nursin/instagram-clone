@@ -2,6 +2,7 @@ import { Button, Input, Modal, Typography } from '@material-ui/core';
 import { Box } from '@mui/system';
 import React, { useEffect, useState } from 'react';
 import './App.css';
+import ImageUpload from './components/ImageUpload';
 import Post from './components/Post';
 import { auth, db } from './firebase';
 
@@ -20,6 +21,7 @@ const style = {
 function App() {
     const [posts, setPosts] = useState([]);
     const [open, setOpen] = useState(false);
+    const [openSignIn, setOpenSignIn] = useState(false);
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -56,7 +58,7 @@ function App() {
 
 
     useEffect(() => {
-        db.collection('posts').onSnapshot(snapshot => {
+        db.collection('posts').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
             setPosts(snapshot.docs.map(doc => ({
                 id: doc.id,
                 post: doc.data()
@@ -74,6 +76,16 @@ function App() {
                 })
             })
             .catch((error) => alert(error.message))
+        setOpen(false);
+    }
+
+    const signIn = (event) => {
+        event.preventDefault();
+        auth
+            .signInWithEmailAndPassword(email, password)
+
+            .catch((error) => alert(error.message))
+        setOpenSignIn(false);
     }
 
     return (
@@ -113,29 +125,68 @@ function App() {
                     </Typography>
                 </Box>
             </Modal>
+            <Modal
+                open={openSignIn}
+                onClose={() => setOpenSignIn(false)}
+                aria-labelledby="modal-modal-title"
+                aria-describedby="modal-modal-description"
+            >
+                <Box sx={style}>
+                    <Typography id="modal-modal-title" variant="h6" component="h2">
+                        <center>Instagram</center>
+                    </Typography>
+                    <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+                        <form className="app__signup">
+                            <Input
+                                placeholder="email"
+                                type="text"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                            />
+                            <Input
+                                placeholder="password"
+                                type="text"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                            <Button onClick={signIn}>Sign In</Button>
+                        </form>
+                    </Typography>
+                </Box>
+            </Modal>
             <div className="app__header">
                 <div className="app-img">
                     Instagram
                 </div>
 
+                {user ? (
+                    <Button onClick={() => auth.signOut()}>Logout</Button>
+                ) : (
+                    <div>
+                        <Button onClick={() => setOpenSignIn(true)}>Sign In</Button>
+                        <Button onClick={() => setOpen(true)}>Sign Up</Button>
+                    </div>
+                )}
             </div>
-            {user ? (
-                <Button onClick={() => auth.signOut()}>Logout</Button>
-            ) : (
-                <Button onClick={() => setOpen(true)}>Sign Up</Button>
-            )}
+            <div className="app__posts">
+                {
+                    posts.map(({ id, post }) => (
+                        <Post
+                            key={id}
+                            imageUrl={post.imageUrl}
+                            username={post.username}
+                            caption={post.caption}
+                            avatarUrl={post.avatarUrl}
+                        />
+                    ))
+                }
+            </div>
 
-            {
-                posts.map(({ id, post }) => (
-                    <Post
-                        key={id}
-                        imageUrl={post.imageUrl}
-                        username={post.username}
-                        caption={post.caption}
-                        avatarUrl={post.avatarUrl}
-                    />
-                ))
-            }
+            {user?.displayName ? (
+                <ImageUpload username={user.displayName} />
+            ) : (
+                <h3>Sorry, you need to login to upload</h3>
+            )}
 
         </div>
     );
