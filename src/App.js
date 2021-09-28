@@ -168,11 +168,20 @@ function App() {
                     </div>
                 )}
             </div>
+            
+            {user?.displayName ? (
+                <ImageUpload username={user.displayName} />
+            ) : (
+                <h3>Sorry, you need to login to upload</h3>
+            )}
+            
             <div className="app__posts">
                 {
                     posts.map(({ id, post }) => (
                         <Post
                             key={id}
+                            postId={id}
+                            user={user}
                             imageUrl={post.imageUrl}
                             username={post.username}
                             caption={post.caption}
@@ -181,13 +190,6 @@ function App() {
                     ))
                 }
             </div>
-
-            {user?.displayName ? (
-                <ImageUpload username={user.displayName} />
-            ) : (
-                <h3>Sorry, you need to login to upload</h3>
-            )}
-
         </div>
     );
 }
